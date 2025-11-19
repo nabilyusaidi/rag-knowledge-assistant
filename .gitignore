@@ -1,0 +1,30 @@
+#python
+__pycache__/
+*.pyc
+
+# Environments
+.env
+venv/
+.env.local
+.env.development
+.env.production
+
+# Node
+node_modules/
+dist/
+build/
+
+# IDE
+.vscode/
+.DS_Store
+
+# Data/outputs
+data/
+*.pdf
+*.docx
+
+# Logs
+*.log
+
+# Docker
+*.pid
