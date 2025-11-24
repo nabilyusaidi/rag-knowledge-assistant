@@ -55,11 +55,13 @@ def extract_sections(cleaned_text):
     summary_keywords = ["summary", "profile", "objective"]
     experience_keywords = ["experience", "employment", "work history"]
     education_keywords = ["education", "academic"]
+    project_keywords = ["relevant projects", "projects"]
     
     sections= { #create lists for each section
         "summary": [],
         "experience": [],
         "education": [],
+        "projects": []
     }
     
     current_label = None
@@ -79,13 +81,17 @@ def extract_sections(cleaned_text):
             current_label = "education"
             continue
         
+        if any(keyword in lower for keyword in project_keywords):
+            current_label = "projects"
+            continue
+        
         if current_label is not None:
             sections[current_label].append(line)
     
     result = []
     index = 0
 
-    for label in ["summary", "experience", "education"]:
+    for label in ["summary", "experience", "education", "projects"]:
         content_lines = sections[label]
         content = "\n".join(content_lines).strip()
         
@@ -94,7 +100,7 @@ def extract_sections(cleaned_text):
                 {
                     "label": label,
                     "index": index,
-                    "content": content,
+                    "content": content
                 }
             )
             index += 1
@@ -109,7 +115,7 @@ def insert_sections(cursor, document_id, sections):
             (document_id, section_label, section_index, content)
             VALUES (%s,%s,%s,%s)
             """,
-            (document_id, section["label"], section["index"], section["content"],)
+            (document_id, section["label"], section["index"], section["content"])
         )
     
 def main(pdf_path):
