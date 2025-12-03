@@ -1,4 +1,5 @@
 import psycopg2
+from psycopg2.extras import Json
 from pypdf import PdfReader
 
 DB_HOST = "localhost"
@@ -18,14 +19,19 @@ def get_connection():
     
     return conn
 
-def insert_document(cursor, title, source_path):
+def insert_document(cursor, title, source_path, doc_type="resume"):
+    doc_metadata={
+        "doc_type": doc_type,
+        "title": title,
+        "source_path": source_path
+    }
     cursor.execute(
         """
-        INSERT INTO documents (title, source_path)
-        VALUES (%s, %s)
+        INSERT INTO documents (title, doc_type, source_path, metadata)
+        VALUES (%s, %s, %s, %s)
         RETURNING id
         """,
-        (title, source_path),
+        (title, doc_type, source_path, Json(doc_metadata)),
     )
     
     document_id = cursor.fetchone()[0]
@@ -38,7 +44,8 @@ def read_pdf_text(pdf_path):
     for page in reader.pages:
         text = page.extract_text() or "" # if the text is None, it will fall back to an empty string so that text is always a string
         all_text += text + "\n" # append pages text into all_text and add newline(\n) between pages to avoid merge into one long line
-        return all_text
+    
+    return all_text
     
 def clean_text(text):
     text = text.replace("\r", "\n") #sometimes pdf has the windows line endings eg: Experience\r\n
@@ -107,15 +114,20 @@ def extract_sections(cleaned_text):
             
     return result
 
-def insert_sections(cursor, document_id, sections):
+def insert_sections(cursor, document_id, sections, doc_type="resume"):
     for section in sections:
+        section_metadata={
+            "doc_type": doc_type,
+            "section_label": section["label"],
+            "section_index": section["index"]
+        }
         cursor.execute(
             """
             INSERT INTO resume_sections
-            (document_id, section_label, section_index, content)
-            VALUES (%s,%s,%s,%s)
+            (document_id, section_label, section_index, content, metadata)
+            VALUES (%s,%s,%s,%s, %s)
             """,
-            (document_id, section["label"], section["index"], section["content"])
+            (document_id, section["label"], section["index"], section["content"], Json(section_metadata))
         )
     
 def main(pdf_path):
@@ -125,7 +137,7 @@ def main(pdf_path):
     try:
         # Insert Document Row
         title = pdf_path.split("/")[-1]
-        document_id = insert_document(cursor, title, pdf_path)
+        document_id = insert_document(cursor, title, pdf_path, doc_type="resume")
         print ("Inserted document ID:", document_id)
         
         # Read PDF
@@ -141,7 +153,7 @@ def main(pdf_path):
         print("Extracted section labels:", [s["label"] for s in sections])
 
         # Insert sections
-        insert_sections(cursor, document_id, sections)
+        insert_sections(cursor, document_id, sections, doc_type="resume")
 
         # Commit changes to DB
         conn.commit()
