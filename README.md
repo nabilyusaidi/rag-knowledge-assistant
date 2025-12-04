@@ -7,16 +7,14 @@ that enables semantic search, knowledge graph retrieval, and multimodal query un
 - [x] Project initialized
 - [x] Set up backend service structure
 - [x] Implement PDF ingestion pipeline for one real resume
-- [ ] Set up pgvector indexing
-- [ ] Integrate embedding provider
-- [ ] Build FastAPI endpoints
-- [ ] Integrate Neo4j for knowledge graphs
-- [ ] Create React frontend
+- [X] Set up pgvector indexing
+- [X] Integrate embedding provider
+- [X] Build FastAPI endpoints
+- [X] Setup Streamlit
 - [ ] Evaluation and testing
 
 ## Tech Stack
 - Backend: FastAPI, PostgreSQL + pgvector
-- Knowledge Graph: Neo4j
-- Frontend: React
-- LLM & Embeddings: OpenAI / Alternatives
+- Frontend: Streamlit
+- LLM & Embeddings: HuggingFace
 - Containerization: Docker
