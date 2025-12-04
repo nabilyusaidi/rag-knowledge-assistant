@@ -1,4 +1,4 @@
-from typing import List, Tuple
+from typing import List, Tuple, Optional
 
 from backend.ingestion import get_connection
 from backend.retrieval import search_resume_sections
@@ -28,40 +28,37 @@ def format_context(rows: List[RowType]) -> str:
     return "\n".join(lines)
 
 def build_user_prompt(query: str, context_text: str) -> str:
-    return f""" You are given several resume sections retrieved from a vector database.
-Use ONLY this information to answer  the question.
+    return (
+        f"Here are the retrieved resume sections from the database:\n\n"
+        f"{context_text}\n\n"
+        f"Question: {query}\n\n"
+        f"Answer clearly and concisely based only on the context above."
+    )
 
-Question: {query}
-Relevant Resume Sections: {context_text}
-
-If the context does not contain the answer, say you don't know based on the available information.
-"""
-
-def get_system_prompt()-> str:
-    return(
-        "You are an intelligent document analysis assistant for resumes. "
-        "You answer questions based strictly on the provided resume sections. "
-        "Be concise, factual, and avoid making up information not supported "
-        "by the context. If you are unsure or the context is insufficient, "
-        "explicitly say so."
+def get_system_prompt() -> str:
+    return (
+        "You are an assistant that answers questions about resumes.\n"
+        "Use ONLY the provided context sections from the database.\n"
+        "If the answer is not clearly contained in the context, say you don't know.\n"
+        "Do NOT invent details that are not supported by the context."
     )
     
-def answer_query(query: str, top_k: int = 3)-> str:
+def answer_query(query: str, top_k: int = 3, document_id: Optional[str] = None,) -> Tuple[str, List[RowType]]:
     
     conn = get_connection()
     cursor = conn.cursor()
     
     try:
-        rows = search_resume_sections(cursor, query_text = query, top_k=top_k)
+        rows = search_resume_sections(cursor, query_text = query, top_k=top_k, document_id = document_id)
         
         context_text = format_context(rows)
         
         system_prompt = get_system_prompt()
         user_prompt = build_user_prompt(query, context_text)
         
-        final_answer = generate_answer(system_prompt, user_prompt)
+        answer = generate_answer(system_prompt, user_prompt)
         
-        return final_answer
+        return answer, rows
     
     finally:
         cursor.close()
