@@ -45,24 +45,17 @@ def get_system_prompt() -> str:
     
 def answer_query(query: str, top_k: int = 3, document_id: Optional[str] = None,) -> Tuple[str, List[RowType]]:
     
-    conn = get_connection()
-    cursor = conn.cursor()
+
+    rows = search_resume_sections(query_text=query, top_k=top_k, document_id=document_id)
     
-    try:
-        rows = search_resume_sections(cursor, query_text = query, top_k=top_k, document_id = document_id)
-        
-        context_text = format_context(rows)
-        
-        system_prompt = get_system_prompt()
-        user_prompt = build_user_prompt(query, context_text)
-        
-        answer = generate_answer(system_prompt, user_prompt)
-        
-        return answer, rows
+    context_text = format_context(rows)
     
-    finally:
-        cursor.close()
-        conn.close()
+    system_prompt = get_system_prompt()
+    user_prompt = build_user_prompt(query, context_text)
+    
+    answer = generate_answer(system_prompt, user_prompt)
+    
+    return answer, rows
         
 
 if __name__ == "__main__":
