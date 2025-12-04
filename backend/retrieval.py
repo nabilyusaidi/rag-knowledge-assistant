@@ -2,7 +2,11 @@ from sentence_transformers import SentenceTransformer
 from backend.ingestion import get_connection
 import numpy, math
 
+from typing import Tuple, List, Any, Optional
+
 embedding_model = SentenceTransformer("BAAI/bge-base-en-v1.5")
+
+RowType = Tuple[int, str, str, float, float]
 
 def get_resume_sections(cursor):
     cursor.execute(
@@ -60,26 +64,54 @@ def embed_query(text):
     vec = generate_embedding(text)
     return vec
 
-def search_resume_sections(cursor, query_text, top_k=3):
-    query_vector = embed_query(query_text) #turns query_text into a vector using the embed_query function
+def _search_resume_sections_with_cursor(cursor, query_text: str, top_k: int = 3, document_id: Optional[str] = None,) -> List[RowType]:
     
-    embedding_str = "[" + ",".join(str(x) for x in query_vector) + "]" #convert the existing vector into a pgvector format string
-    
-    
-    cursor.execute( # use cosine distance in postgres
-        """
-        SELECT id, section_label, content, (embedding <=> %s::vector) AS cosine_distance,
-            1 - (embedding <=> %s::vector) AS cosine_similarity
+    query_vector = embed_query(query_text)
+    embedding_str = "[" + ",".join(str(x) for x in query_vector) + "]"
+
+    base_sql = """
+        SELECT id,
+               section_label,
+               content,
+               (embedding <=> %s::vector) AS cosine_distance,
+               1 - (embedding <=> %s::vector) AS cosine_similarity
         FROM resume_sections
         WHERE embedding IS NOT NULL
+    """
+    params: List[Any] = [embedding_str, embedding_str]
+
+    if document_id is not None:
+        base_sql += " AND document_id = %s"
+        params.append(document_id)
+
+    base_sql += """
         ORDER BY embedding <=> %s::vector
         LIMIT %s;
-        """,
-        (embedding_str, embedding_str, embedding_str, top_k)
-    )
-    rows = cursor.fetchall()
+    """
+    params.extend([embedding_str, top_k])
+
+    cursor.execute(base_sql, tuple(params))
+    rows: List[RowType] = cursor.fetchall()
     return rows
 
+
+def search_resume_sections(query_text: str, top_k: int = 3, document_id: Optional[str] = None,) -> List[RowType]:
+    
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    try:
+        rows = _search_resume_sections_with_cursor(
+            cursor=cursor,
+            query_text=query_text,
+            top_k=top_k,
+            document_id=document_id,
+        )
+        return rows
+    finally:
+        cursor.close()
+        conn.close()
+        
 def results(rows):
     print("\nSearch Results:\n")
     for idx, row in enumerate(rows, start=1):
@@ -106,7 +138,7 @@ def main():
         embed_resume_sections(cursor)
         
         query = "machine learning"
-        result_rows = search_resume_sections(cursor, query, top_k=3)
+        result_rows =  _search_resume_sections_with_cursor(cursor, query, top_k=3)
         results(result_rows)
 
         # Commit changes

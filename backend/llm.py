@@ -1,4 +1,5 @@
 from transformers import AutoTokenizer, AutoModelForCausalLM, pipeline
+from typing import Any, List, Dict
 
 model_name = "HuggingFaceH4/zephyr-7b-beta"
 
@@ -43,7 +44,7 @@ def generate_answer(system_prompt: str, user_prompt: str, max_new_tokens: int = 
     pipe = get_generation_pipeline()
     prompt = build_prompt_structure(system_prompt, user_prompt)
     
-    outputs = pipe(
+    outputs: List[Dict[str, Any]] = pipe(
         prompt,
         max_new_tokens = max_new_tokens,
         do_sample = True,
