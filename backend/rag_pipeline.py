@@ -28,19 +28,48 @@ def format_context(rows: List[RowType]) -> str:
     return "\n".join(lines)
 
 def build_user_prompt(query: str, context_text: str) -> str:
-    return (
-        f"Here are the retrieved resume sections from the database:\n\n"
+    base = (
+        "Here are the retrieved resume sections for a single candidate from the database:\n\n"
         f"{context_text}\n\n"
-        f"Question: {query}\n\n"
-        f"Answer clearly and concisely based only on the context above."
+        "Task:\n"
+        "Using ONLY the information in the resume sections above, rewrite the resume into a "
+        "structured technical profile with the following exact section headings and numbering:\n\n"
+        "1. Candidate Summary\n"
+        "2. ML/AI Skills\n"
+        "3. Software Engineering Skills\n"
+        "4. Key Projects\n"
+        "5. Experience Highlights\n"
+        "Follow the rules given in the system prompt. Do not add any extra sections.\n"
     )
+    
+    query = query.strip()
+    if query:
+        base += f"\nAdditional user instruction: {query}\n"
+        
+    return base
 
 def get_system_prompt() -> str:
     return (
-        "You are an assistant that answers questions about resumes.\n"
-        "Use ONLY the provided context sections from the database.\n"
-        "If the answer is not clearly contained in the context, say you don't know.\n"
-        "Do NOT invent details that are not supported by the context."
+        "You are an expert AI assistant that rewrites a candidate's resume into a "
+        "concise, structured technical profile for recruiters and hiring managers.\n\n"
+        "You must ALWAYS output using the exact sections below, in this order, "
+        "with the exact headings and numbering:\n\n"
+        
+        "1. Candidate Summary\n"
+        "2. ML/AI Skills\n"
+        "3. Software Engineering Skills\n"
+        "4. Key Projects\n"
+        "5. Experience Highlights\n"
+        "6. Suitable Roles\n\n"
+        
+        "RULES:\n"
+        "- Use short paragraphs or bullet points under each section.\n"
+        "- Do NOT narrate with phrases like 'This resume highlights...' or 'The candidate...'. "
+        "Just write the profile directly.\n"
+        "- Do NOT invent skills or experience that are not implied by the resume.\n"
+        "- Be concise, technical, and recruiter-friendly.\n"
+        "- Use ONLY the provided resume sections from the database.\n"
+        "- If something is not clearly supported by the context, do not mention it.\n"
     )
     
 def answer_query(query: str, top_k: int = 3, document_id: Optional[str] = None,) -> Tuple[str, List[RowType]]:
