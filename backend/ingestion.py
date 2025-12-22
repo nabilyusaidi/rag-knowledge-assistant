@@ -123,7 +123,7 @@ def insert_sections(cursor, document_id, sections, doc_type="resume"):
         }
         cursor.execute(
             """
-            INSERT INTO resume_sections
+            INSERT INTO document_sections
             (document_id, section_label, section_index, content, metadata)
             VALUES (%s,%s,%s,%s, %s)
             """,
