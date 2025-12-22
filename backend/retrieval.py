@@ -12,7 +12,7 @@ def get_resume_sections(cursor):
     cursor.execute(
         """
         SELECT id, content
-        FROM resume_sections
+        FROM document_sections
         WHERE embedding IS NULL
         ORDER BY section_index;
         """
@@ -42,7 +42,7 @@ def update_resume_sections(cursor, section_id, embedding):
     
     cursor.execute( # update the resume_sections table and set the embedding column as the vector value
         """
-        UPDATE resume_sections
+        UPDATE document_sections
         SET embedding = %s::vector
         WHERE id = %s;
         """,
@@ -75,7 +75,7 @@ def _search_resume_sections_with_cursor(cursor, query_text: str, top_k: int = 3,
                content,
                (embedding <=> %s::vector) AS cosine_distance,
                1 - (embedding <=> %s::vector) AS cosine_similarity
-        FROM resume_sections
+        FROM document_sections
         WHERE embedding IS NOT NULL
     """
     params: List[Any] = [embedding_str, embedding_str]
