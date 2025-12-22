@@ -1,4 +1,4 @@
-import psycopg2
+import psycopg2, os
 from psycopg2.extras import Json
 from pypdf import PdfReader
 
@@ -166,8 +166,31 @@ def main(pdf_path):
     finally:
         cursor.close()
         conn.close()
+
+def batch_ingestion(folder_path):
+    folder_path = os.path.abspath(folder_path)
+    
+    if not os.path.isdir(folder_path):
+        print("Folder does not exist:", folder_path)
+        return
+    
+    for filename in os.listdir(folder_path):
+        if not filename.lower().endswith(".pdf"):
+            continue
+        
+        pdf_path = os.path.join(folder_path, filename)
+        
+        try:
+            main(pdf_path)
+        except Exception as e:
+            print("Error ingesting", pdf_path, ":", e)
+
+    print("\nBatch ingestion completed.")
         
 if __name__ == "__main__":
     
-    PDF_PATH = "C:/Users/A/OneDrive/Projects/rag-knowledge-assistant/data/Nabil Yusaidi Resume.pdf"
-    main(PDF_PATH)
+    # PDF_PATH = "C:/Users/A/OneDrive/Projects/rag-knowledge-assistant/data/Nabil Yusaidi Resume.pdf"
+    # main(PDF_PATH)
+    
+    FOLDER_PATH = "C:/Users/A/OneDrive/Projects/rag-knowledge-assistant/data/Data Science"
+    batch_ingestion(FOLDER_PATH)
