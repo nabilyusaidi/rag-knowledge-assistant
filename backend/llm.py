@@ -1,57 +1,41 @@
-from transformers import AutoTokenizer, AutoModelForCausalLM, pipeline
+from openai import OpenAI
 from typing import Any, List, Dict
 
-model_name = "HuggingFaceH4/zephyr-7b-beta"
+import os
 
-_text_generation_pipeline = None #creating a global instance for this pipeline'
+MODEL_NAME = "Qwen/Qwen2.5-1.5B-Instruct:featherless-ai"
 
-def get_generation_pipeline():
-    global _text_generation_pipeline
-    if _text_generation_pipeline is not None:
-        return _text_generation_pipeline
-    
-    print(f"[llm] Loading Model: {model_name}")
-    
-    tokenizer = AutoTokenizer.from_pretrained(model_name)
-    
-    model = AutoModelForCausalLM.from_pretrained(
-        model_name,
-        device_map = "auto",
-        load_in_4bit = True,
-        torch_dtype = "auto"
-    )
-    
-    _text_generation_pipeline = pipeline(
-        "text-generation",
-        model=model,
-        tokenizer=tokenizer,
-        return_full_text=False
-    )
-    
-    print("[llm] Model loaded.")
-    return _text_generation_pipeline
+_client = None
 
-def build_prompt_structure(system_prompt: str, user_prompt: str) -> str:
+def get_llm()-> OpenAI:
+    global _client
+    if _client is None:
+        _client = OpenAI(
+            base_url="https://router.huggingface.co/v1",
+            api_key=os.getenv("HF_TOKEN"),
+        )
+        
+        return _client
+
+def build_prompt_structure(system_prompt: str, user_prompt: str) -> List[Dict[str, str]]:
     
-    return(
-        f"System: {system_prompt}\n\n"
-        f"User: {user_prompt}\n\n"
-        "Assistant:"
-    )
+    return[
+        {"role": "system", "content": system_prompt},
+        {"role": "user", "content": user_prompt},
+    ]
     
 def generate_answer(system_prompt: str, user_prompt: str, max_new_tokens: int = 512) -> str:
-    
-    pipe = get_generation_pipeline()
-    prompt = build_prompt_structure(system_prompt, user_prompt)
-    
-    outputs: List[Dict[str, Any]] = pipe(
-        prompt,
-        max_new_tokens = max_new_tokens,
-        do_sample = True,
+    client = get_llm()
+
+    messages = build_prompt_structure(system_prompt, user_prompt)
+
+    response = client.chat.completions.create(
+        model=MODEL_NAME,
+        messages=messages,
         temperature=0.3,
-        top_p=0.9
+        max_tokens=max_new_tokens,
+        top_p=0.9,
     )
-    
-    generated_text = outputs[0]["generated_text"].strip()
-    return generated_text
+
+    return response.choices[0].message.content.strip()
 
