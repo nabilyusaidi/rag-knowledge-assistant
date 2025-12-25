@@ -5,3 +5,4 @@ psycopg2-binary
 sentence-transformers
 numpy
 pandas
+pypdf
