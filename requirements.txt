@@ -1,0 +1,7 @@
+streamlit
+openai
+requests
+psycopg2-binary
+sentence-transformers
+numpy
+pandas
