@@ -26,5 +26,5 @@ data/
 # Logs
 *.log
 
-# Docker
-*.pid
+secrets.toml
+

@@ -4,8 +4,14 @@ from pypdf import PdfReader
 import streamlit as st
 
 def get_connection():
-    return psycopg2.connect(st.secrets["DATABASE_URL"])
-
+    return psycopg2.connect(
+        host=st.secrets["DB_HOST"],
+        port=int(st.secrets["DB_PORT"]),
+        dbname=st.secrets["DB_NAME"],
+        user=st.secrets["DB_USER"],
+        password=st.secrets["DB_PASSWORD"],
+        sslmode="require",
+    )
 def insert_document(cursor, title, source_path, doc_type="resume"):
     doc_metadata={
         "doc_type": doc_type,
