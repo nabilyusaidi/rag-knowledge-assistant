@@ -15,7 +15,7 @@ def get_llm()-> OpenAI:
             api_key=os.getenv("HF_TOKEN"),
         )
         
-        return _client
+    return _client
 
 def build_prompt_structure(system_prompt: str, user_prompt: str) -> List[Dict[str, str]]:
     
