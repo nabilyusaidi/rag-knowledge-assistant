@@ -196,7 +196,7 @@ def _format_job_label(df_jobs, job_post_id):
     role = row["role_title"]
     dept = row["department"]
     status = row["status"]
-    return f"{job_post_id} – {role} [{dept}] ({status})"
+    return f"{role} ({status})"
 
 
 if __name__ == "__main__":

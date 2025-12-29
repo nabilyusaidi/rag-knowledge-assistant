@@ -12,7 +12,7 @@ def main():
         seniority = st.text_input("Seniority (e.g. Junior, Mid, Senior)", "")
         location = st.text_input("Location", "")
 
-        raw_jd_text = st.text_area(
+        raw_JD_text = st.text_area(
             "Job Description (paste full JD here)",
             height=300,
             placeholder="Paste the job description that HR prepared...",
@@ -21,7 +21,7 @@ def main():
         submitted = st.form_submit_button("Create Job Post")
 
     if submitted:
-        if role_title.strip() == "" or raw_jd_text.strip() == "":
+        if role_title.strip() == "" or raw_JD_text.strip() == "":
             st.error("Role Title and Job Description are required.")
         else:
             try:
@@ -30,7 +30,7 @@ def main():
                     department=department.strip() or None,
                     seniority=seniority.strip() or None,
                     location=location.strip() or None,
-                    raw_job_description_text=raw_jd_text,
+                    raw_JD_text=raw_JD_text,
                 )
 
                 st.success("Job post created successfully.")

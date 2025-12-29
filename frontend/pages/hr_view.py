@@ -46,7 +46,7 @@ def fetch_job_posts():
 
 
 def main():
-    st.title("ATS – Job Posts Overview")
+    st.title("Job Posts Overview")
 
     st.write("This page shows all job posts that HR has created in the system.")
 
@@ -59,11 +59,11 @@ def main():
     st.subheader("Job Posts")
     st.dataframe(df, use_container_width=True)
 
-    # Optional: quick detail view
+    # quick detail view
     selected_id = st.selectbox(
-        "Select a job_post to view details",
+        "Select a job post to view details",
         df["id"].tolist(),
-        format_func=lambda x: f"{x} – {df.loc[df['id'] == x, 'role_title'].values[0]}",
+        format_func=lambda x: f" {df.loc[df['id'] == x, 'role_title'].values[0]}",
     )
 
     if selected_id:
