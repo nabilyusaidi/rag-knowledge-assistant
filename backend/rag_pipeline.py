@@ -39,6 +39,7 @@ def build_user_prompt(query: str, context_text: str) -> str:
         "3. Software Engineering Skills\n"
         "4. Key Projects\n"
         "5. Experience Highlights\n"
+        "6. Suitable Roles\n\n"
         "Follow the rules given in the system prompt. Do not add any extra sections.\n"
     )
     

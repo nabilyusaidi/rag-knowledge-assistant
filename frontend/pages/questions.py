@@ -37,6 +37,7 @@ st.title("❓ Ask Questions about Resumes")
 st.markdown(
     "You can either search across **all ingested resumes** or restrict the search "
     "to a specific document."
+    "\n\nLLM Model: Qwen/Qwen2.5-1.5B-Instruct"
 )
 
 docs = list_documents()
