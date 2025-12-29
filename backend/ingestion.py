@@ -1,23 +1,10 @@
 import psycopg2, os
 from psycopg2.extras import Json
 from pypdf import PdfReader
-
-DB_HOST = "localhost"
-DB_PORT = 5432
-DB_NAME = "rag-knowledge-assistant"
-DB_USER = "postgres"
-DB_PASSWORD = "postgres"
+import streamlit as st
 
 def get_connection():
-    conn = psycopg2.connect(
-        host = DB_HOST,
-        port = DB_PORT,
-        dbname = DB_NAME,
-        user = DB_USER,
-        password = DB_PASSWORD,
-    )
-    
-    return conn
+    return psycopg2.connect(st.secrets["DATABASE_URL"])
 
 def insert_document(cursor, title, source_path, doc_type="resume"):
     doc_metadata={
