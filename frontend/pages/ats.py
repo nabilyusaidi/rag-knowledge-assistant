@@ -2,7 +2,7 @@ import streamlit as st
 from backend.ats import create_job_posts
 
 def main():
-    st.title("ATS – Create Job Post (HR)")
+    st.title("Create Job Post (HR)")
 
     st.write("Fill in the job information and paste the full job description text.")
 

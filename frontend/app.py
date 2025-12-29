@@ -8,12 +8,12 @@ if str(ROOT_DIR) not in sys.path:
     sys.path.insert(0, str(ROOT_DIR))
 
 st.set_page_config(
-    page_title="FYP 2.0 – RAG Demo",
+    page_title="FYP 2.0 - Intelligent Document Analysis System",
     page_icon="🤖",
     layout="wide",
 )
 
-st.title("🤖 FYP 2.0 – Intelligent Document Analysis System")
+st.title("🤖 FYP – Intelligent Document Analysis System")
 
 st.markdown(
     """
