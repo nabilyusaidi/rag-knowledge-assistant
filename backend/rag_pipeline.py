@@ -83,7 +83,7 @@ def answer_query(query: str, top_k: int = 3, document_id: Optional[str] = None,)
     system_prompt = get_system_prompt()
     user_prompt = build_user_prompt(query, context_text)
     
-    answer = generate_answer(system_prompt, user_prompt)
+    answer = generate_answer(system_prompt, user_prompt, max_new_tokens=2048)
     
     return answer, rows
         

@@ -37,7 +37,7 @@ st.title("❓ Ask Questions about Resumes")
 st.markdown(
     "You can either search across **all ingested resumes** or restrict the search "
     "to a specific document."
-    "\n\nLLM Model: Qwen/Qwen2.5-1.5B-Instruct"
+    "\n\nLLM Model: Gemini 3 Flash Preview"
 )
 
 docs = list_documents()
@@ -57,16 +57,19 @@ if selected_option == "🔍 All documents":
 else:
     selected_doc_id = doc_id_map[selected_option]
 
-#Question input
-question = st.text_area(
-    "Your question",
-    placeholder="e.g. What machine learning projects has this candidate worked on?",
-)
+with st.form(key="qa_form"):
+    # Question input
+    question = st.text_area(
+        "Your question",
+        placeholder="e.g. What machine learning projects has this candidate worked on?",
+    )
 
-top_k = st.slider("Number of sections to retrieve (top_k)", min_value=1, max_value=10, value=3)
+    top_k = st.slider("Number of sections to retrieve (top_k)", min_value=1, max_value=10, value=3)
 
-# Ask button
-if st.button("Ask"):
+    # Ask button
+    submitted = st.form_submit_button("Ask")
+
+if submitted:
     if not question.strip():
         st.warning("Please enter a question.")
     else:
