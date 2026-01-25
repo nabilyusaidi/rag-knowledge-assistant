@@ -55,7 +55,7 @@ def main():
         return
 
     st.subheader("Job Posts")
-    st.dataframe(df, width='stretch)
+    st.dataframe(df, width='stretch')
 
     # quick detail view
     selected_id = st.selectbox(

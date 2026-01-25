@@ -1,4 +1,6 @@
 streamlit
+python-dotenv
+google-genai
 openai
 requests
 psycopg2-binary
