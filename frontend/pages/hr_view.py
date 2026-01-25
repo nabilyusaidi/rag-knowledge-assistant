@@ -17,8 +17,7 @@ def fetch_job_posts():
                 department,
                 seniority,
                 location,
-                status,
-                created_at
+                status
             FROM job_posts
             ORDER BY created_at DESC;
             """
@@ -35,8 +34,7 @@ def fetch_job_posts():
         "department",
         "seniority",
         "location",
-        "status",
-        "created_at",
+        "status"
     ]
 
     if not rows:
@@ -57,7 +55,7 @@ def main():
         return
 
     st.subheader("Job Posts")
-    st.dataframe(df, use_container_width=True)
+    st.dataframe(df, width='stretch)
 
     # quick detail view
     selected_id = st.selectbox(

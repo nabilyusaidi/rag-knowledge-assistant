@@ -41,7 +41,7 @@ def main():
     if df_status.empty:
         st.info("No applications yet.")
     else:
-        st.dataframe(df_status, use_container_width=True)
+        st.dataframe(df_status, width='stretch)
         st.bar_chart(
             data=df_status.set_index("status")["count"]
         )
@@ -55,7 +55,7 @@ def main():
     if df_dept.empty:
         st.info("No job posts found.")
     else:
-        st.dataframe(df_dept, use_container_width=True)
+        st.dataframe(df_dept, width='stretch)
 
         # Quick visualization: applications by department
         st.caption("Applications by Department")
@@ -73,7 +73,7 @@ def main():
         st.info("No job posts yet.")
         return
 
-    st.dataframe(df_jobs, use_container_width=True)
+    st.dataframe(df_jobs, width='stretch)
 
     # Detailed view for selected job_post
     job_ids = df_jobs["job_post_id"].tolist()
@@ -92,7 +92,7 @@ def main():
         if df_apps.empty:
             st.info("No applications for this job yet.")
         else:
-            st.dataframe(df_apps, use_container_width=True)
+            st.dataframe(df_apps, width='stretch)
 
             # small score distribution chart
             if df_apps["ats_score"].notnull().any():
@@ -182,7 +182,7 @@ def main():
         if df_missing.empty:
             st.info("No missing skills data yet. Make sure ATS scoring populates the 'missing_skills' column.")
         else:
-            st.dataframe(df_missing, use_container_width=True)
+            st.dataframe(df_missing, width='stretch)
             st.bar_chart(
                 data=df_missing.set_index("skill")["missing_count"]
             )
