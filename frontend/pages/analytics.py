@@ -1,6 +1,6 @@
 import streamlit as st
 import pandas as pd
-
+from backend.ats import generate_ai_explanation
 from backend.analytics import (
     get_global_ats_stats,
     get_applications_by_status,
@@ -9,7 +9,9 @@ from backend.analytics import (
     get_applications_for_job,
     get_role_stats,
     get_role_score,
-    get_missing_skills
+    get_missing_skills,
+    get_missing_skills_for_job,
+    get_application_details
 )
 
 
@@ -23,7 +25,7 @@ def main():
 
     col1, col2, col3, col4 = st.columns(4)
     with col1:
-        st.metric("Total Jobs", stats["total_jobs"])
+        st.metric("Total Jobs Posts", stats["total_jobs"])
     with col2:
         st.metric("Open Jobs", stats["open_jobs"])
     with col3:
@@ -41,9 +43,10 @@ def main():
     if df_status.empty:
         st.info("No applications yet.")
     else:
-        st.dataframe(df_status, width='stretch')
+        st.dataframe(df_status, use_container_width=True)
         st.bar_chart(
-            data=df_status.set_index("status")["count"]
+            data=df_status.set_index("status")["count"],
+            horizontal=True
         )
 
     st.write("---")
@@ -55,12 +58,11 @@ def main():
     if df_dept.empty:
         st.info("No job posts found.")
     else:
-        st.dataframe(df_dept, width='stretch')
-
-        # Quick visualization: applications by department
+        st.dataframe(df_dept, use_container_width=True)
         st.caption("Applications by Department")
         st.bar_chart(
-            data=df_dept.set_index("department")["total_applications"]
+            data=df_dept.set_index("department")["total_applications"],
+            horizontal=True
         )
 
     st.write("---")
@@ -73,7 +75,7 @@ def main():
         st.info("No job posts yet.")
         return
 
-    st.dataframe(df_jobs, width='stretch')
+    st.dataframe(df_jobs, use_container_width=True)
 
     # Detailed view for selected job_post
     job_ids = df_jobs["job_post_id"].tolist()
@@ -92,104 +94,138 @@ def main():
         if df_apps.empty:
             st.info("No applications for this job yet.")
         else:
-            # Show friendly columns
+            available_cols = df_apps.columns.tolist()
             display_cols = ["application_id", "resume_name", "status", "ats_score", "created_at"]
-            st.dataframe(df_apps[display_cols], use_container_width=True)
+            final_cols = [c for c in display_cols if c in available_cols]
+            
+            # Sort by ATS Score descending
+            if "ats_score" in df_apps.columns:
+                df_apps = df_apps.sort_values(by="ats_score", ascending=False)
+
+            st.dataframe(df_apps[final_cols], use_container_width=True)
 
             # small score distribution chart
-            if df_apps["ats_score"].notnull().any():
-                st.caption("ATS Score Distribution for this Job")
-                st.bar_chart(
-                    data=df_apps.dropna(subset=["ats_score"]).set_index("application_id")["ats_score"]
-                )
+            # Score Distribution Histogram
+            if "ats_score" in df_apps.columns and df_apps["ats_score"].notnull().any():
+                st.caption("ATS Score Distribution")
+                
+                # Create bins for better visualization
+                bins = [0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 101]
+                labels = ['0-10', '11-20', '21-30', '31-40', '41-50', '51-60', '61-70', '71-80', '81-90', '91-100']
+                
+                valid_scores = df_apps.dropna(subset=["ats_score"])["ats_score"].astype(float)
+                
+                score_cats = pd.cut(valid_scores, bins=bins, labels=labels, right=False)
+                dist_data = score_cats.value_counts().sort_index()
+                
+                st.bar_chart(dist_data)
+
+            # Candidate Gap Analysis Section
+            st.markdown("### Candidate Analysis")
+            st.caption("Select a candidate to view their assessment summary and detailed gap analysis.")
+
+            candidate_options = df_apps[["application_id", "resume_name", "ats_score"]].to_dict('records')
+            
+            selected_app_id = st.selectbox(
+                "Select Candidate",
+                options=[c["application_id"] for c in candidate_options],
+                format_func=lambda x: next((f"{c['resume_name']} (Score: {c['ats_score']})" for c in candidate_options if c["application_id"] == x), x)
+            )
+
+            if selected_app_id:
+                details = get_application_details(selected_app_id)
+                
+                if details:
+                    score = details["ats_score"]
+                    breakdown = details["score_breakdown"]
+                    resume_name = details["resume_name"]
+                     
+                    # Overall fit calculation
+                    if score >= 70:
+                        fit_label = "Strong Fit"
+                        fit_delta = "High Match"
+                        fit_delta_color = "normal" 
+                    elif score >= 50:
+                        fit_label = "Partial Fit"
+                        fit_delta = "Medium Match"
+                        fit_delta_color = "off"
+                    else:
+                        fit_label = "Low Fit"
+                        fit_delta = "Low Match"
+                        fit_delta_color = "inverse"
+
+                    # Header Section
+                    c1, c2 = st.columns([3, 1])
+                    with c1:
+                        st.subheader(f"{resume_name}")
+                    with c2:
+                        st.metric("ATS Score", f"{score:.0f}/100", delta=fit_label, delta_color=fit_delta_color)
+
+                    score_details = breakdown.get("score_details", {})
+                    explanation = breakdown.get("explanation", {})
+                    
+                    # HR Takeaway (Prominent)
+                    reasoning = explanation.get("reasoning", "No assessment generated.")
+                    
+                    if reasoning == "Click 'Generate Explanation' to view AI analysis." or reasoning == "No assessment generated.":
+                        st.warning("AI Analysis not yet generated.")
+                        if st.button("Generate AI Explanation"):
+                             with st.spinner("Generating explanation..."):
+                                  generate_ai_explanation(selected_app_id)
+                                  st.success("Generated!")
+                                  st.rerun()
+                    else:
+                        st.info(f"**HR Assessment**: {reasoning}")
+                    
+                    st.divider()
+
+                    # Two-column layout for analysis
+                    col_gaps, col_strengths = st.columns(2)
+                    
+                    with col_gaps:
+                        st.markdown("#### ⚠️ Gaps & Risks")
+                        
+                        # Critical Gaps
+                        missing_must = score_details.get("missing_must", [])
+                        st.markdown("**Critical Gaps** (Immediate Blockers)")
+                        if missing_must:
+                            for gap in missing_must:
+                                st.markdown(f"- {gap}")
+                            st.caption("These skills are required for the role.")
+                        else:
+                            st.markdown("*(No critical gaps identified)*")
+                        
+                        st.write("") # spacer
+
+                        # Moderate Gaps
+                        missing_nice = score_details.get("missing_nice", [])
+                        st.markdown("**Moderate Gaps** (Trainable)")
+                        if missing_nice:
+                            for gap in missing_nice:
+                                st.markdown(f"- {gap}")
+                            st.caption("Can likely be addressed with onboarding/training.")
+                        else:
+                             st.markdown("*(No moderate gaps identified)*")
+
+                    with col_strengths:
+                        st.markdown("#### ✅ Strengths & Assets")
+                        
+                        matched_must = score_details.get("matched_must", [])
+                        matched_nice = score_details.get("matched_nice", [])
+                        matches = list(set(matched_must + matched_nice))
+                        
+                        if matches:
+                            for match in matches:
+                                st.markdown(f"- {match}")
+                        else:
+                            st.markdown("*(No explicit skill matches found)*")
+
+                else:
+                    st.error("Could not load details for this application.")
                 
         st.write("---")
 
-    st.header("Role-Specific ATS Analytics")
 
-    # Define roles
-    roles = [
-        ("AI Engineer", "%AI Engineer%"),
-        ("Data Scientist", "%Data Scientist%"),
-    ]
-
-    for role_label, role_pattern in roles:
-        st.subheader(role_label)
-
-        # ===== STATS FOR THIS ROLE =====
-        stats = get_role_stats(role_pattern)
-
-        if stats["total_applications"] == 0:
-            st.info("No applications found for this role (including its variants).")
-            continue
-
-        col1, col2, col3, col4, col5 = st.columns(5)
-        with col1:
-            st.metric("Total Applications", stats["total_applications"])
-        with col2:
-            st.metric(
-                "Avg ATS Score",
-                f"{stats['avg_score']:.2f}" if stats["avg_score"] is not None else "N/A",
-            )
-        with col3:
-            st.metric(
-                "Median ATS Score",
-                f"{stats['median_score']:.2f}" if stats["median_score"] is not None else "N/A",
-            )
-        with col4:
-            st.metric(
-                "Min ATS Score",
-                f"{stats['min_score']:.2f}" if stats["min_score"] is not None else "N/A",
-            )
-        with col5:
-            st.metric(
-                "Max ATS Score",
-                f"{stats['max_score']:.2f}" if stats["max_score"] is not None else "N/A",
-            )
-
-        # ===== SCORE DISTRIBUTION (HISTOGRAM-LIKE) =====
-        df_scores = get_role_score(role_pattern)
-
-        if not df_scores.empty:
-            st.caption("ATS Score Distribution")
-
-            
-            df_scores["bin"] = pd.cut(
-                df_scores["ats_score"],
-                bins=[0, 20, 40, 60, 80, 100],
-                include_lowest=True,
-                right=True,
-            )
-
-            df_hist = (
-                df_scores.groupby("bin")
-                .size()
-                .reset_index(name="count")
-            )
-
-            # Make bin labels a bit nicer
-            df_hist["bin_label"] = df_hist["bin"].astype(str)
-
-            st.bar_chart(
-                data=df_hist.set_index("bin_label")["count"]
-            )
-        else:
-            st.info("No ATS scores recorded yet for this role.")
-
-        # ===== TOP MISSING SKILLS FOR THIS ROLE =====
-        st.caption("Top Missing Skills for this Role")
-
-        df_missing = get_missing_skills(role_pattern, limit=15)
-
-        if df_missing.empty:
-            st.info("No missing skills data yet. Make sure ATS scoring populates the 'missing_skills' column.")
-        else:
-            st.dataframe(df_missing, width='stretch')
-            st.bar_chart(
-                data=df_missing.set_index("skill")["missing_count"]
-            )
-
-        st.write("")  # small spacing between roles
 
 
 

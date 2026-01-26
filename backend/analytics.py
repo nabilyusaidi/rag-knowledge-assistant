@@ -168,14 +168,16 @@ def get_applications_for_job(job_post_id):
         cursor.execute(
             """
             SELECT
-                id,
-                resume_document_id,
-                status,
-                ats_score,
-                created_at
-            FROM applications
-            WHERE job_post_id = %s
-            ORDER BY ats_score DESC NULLS LAST, created_at ASC;
+                a.id,
+                a.resume_document_id,
+                d.title AS resume_name,
+                a.status,
+                a.ats_score,
+                a.created_at
+            FROM applications a
+            JOIN documents d ON a.resume_document_id = d.id
+            WHERE a.job_post_id = %s
+            ORDER BY a.ats_score DESC NULLS LAST, a.created_at ASC;
             """,
             (job_post_id,),
         )
@@ -188,6 +190,7 @@ def get_applications_for_job(job_post_id):
     columns = [
         "application_id",
         "resume_document_id",
+        "resume_name",
         "status",
         "ats_score",
         "created_at",
@@ -309,3 +312,83 @@ def get_missing_skills(role_pattern, limit=20):
 
     df = pd.DataFrame(rows, columns=columns)
     return df
+
+
+def get_missing_skills_for_job(job_post_id, limit=20):
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    try:
+        cursor.execute(
+            """
+            SELECT
+                LOWER(TRIM(skill)) AS skill,
+                COUNT(*) AS missing_count
+            FROM applications a
+            CROSS JOIN LATERAL jsonb_array_elements_text(a.missing_skills) AS skill
+            WHERE a.job_post_id = %s
+              AND a.missing_skills IS NOT NULL
+            GROUP BY LOWER(TRIM(skill))
+            ORDER BY missing_count DESC
+            LIMIT %s;
+            """,
+            (job_post_id, limit),
+        )
+        rows = cursor.fetchall()
+
+    finally:
+        cursor.close()
+        conn.close()
+
+    columns = ["skill", "missing_count"]
+
+    if not rows:
+        return pd.DataFrame(columns=columns)
+
+    df = pd.DataFrame(rows, columns=columns)
+    df = pd.DataFrame(rows, columns=columns)
+    return df
+
+
+def get_application_details(application_id):
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    try:
+        cursor.execute(
+            """
+            SELECT
+                a.id,
+                a.resume_document_id,
+                d.title AS resume_name,
+                a.ats_score,
+                a.metadata,
+                a.created_at
+            FROM applications a
+            JOIN documents d ON a.resume_document_id = d.id
+            WHERE a.id = %s;
+            """,
+            (application_id,),
+        )
+        row = cursor.fetchone()
+
+        if not row:
+            return None
+
+        app_id, doc_id, resume_name, score, metadata, created_at = row
+        
+        # Extract score_breakdown from metadata
+        metadata = metadata if isinstance(metadata, dict) else (metadata if metadata else {})
+        breakdown = metadata.get("score_breakdown", {})
+
+        return {
+            "application_id": app_id,
+            "resume_name": resume_name,
+            "ats_score": float(score) if score is not None else 0.0,
+            "score_breakdown": breakdown,
+            "created_at": created_at
+        }
+
+    finally:
+        cursor.close()
+        conn.close()
