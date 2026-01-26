@@ -38,6 +38,7 @@ st.markdown(
     "You can either search across **all ingested resumes** or restrict the search "
     "to a specific document."
     "\n\nLLM Model: Gemini 3 Flash Preview"
+    "\n Embedding Model: BAAI/bge-base-en-v1.5"
 )
 
 docs = list_documents()
