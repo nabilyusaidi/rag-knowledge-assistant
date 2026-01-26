@@ -92,7 +92,9 @@ def main():
         if df_apps.empty:
             st.info("No applications for this job yet.")
         else:
-            st.dataframe(df_apps, width='stretch')
+            # Show friendly columns
+            display_cols = ["application_id", "resume_name", "status", "ats_score", "created_at"]
+            st.dataframe(df_apps[display_cols], use_container_width=True)
 
             # small score distribution chart
             if df_apps["ats_score"].notnull().any():

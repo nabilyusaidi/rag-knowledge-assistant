@@ -1,5 +1,5 @@
 import streamlit as st
-from backend.ats import create_job_posts
+from backend.job_manager import create_job_posts
 
 def main():
     st.title("Create Job Post (HR)")
