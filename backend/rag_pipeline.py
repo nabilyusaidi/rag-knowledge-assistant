@@ -78,6 +78,9 @@ def answer_query(query: str, top_k: int = 3, document_id: Optional[str] = None,)
 
     rows = search_resume_sections(query_text=query, top_k=top_k, document_id=document_id)
     
+    if not rows:
+        return "I could not find any relevant information in the resume regarding your query.", []
+
     context_text = format_context(rows)
     
     system_prompt = get_system_prompt()

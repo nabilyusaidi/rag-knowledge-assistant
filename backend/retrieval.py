@@ -155,7 +155,7 @@ def extract_resume_entities(resume_text: str) -> Dict[str, Any]:
         "years_experience": years_experience
     }
 
-def _search_resume_sections_with_cursor(cursor, query_text: str, top_k: int = 3, document_id: Optional[str] = None,) -> List[RowType]:
+def _search_resume_sections_with_cursor(cursor, query_text: str, top_k: int = 3, similarity_threshold: float = 0.45, document_id: Optional[str] = None,) -> List[RowType]:
     
     query_vector = embed_query(query_text)
     embedding_str = "[" + ",".join(str(x) for x in query_vector) + "]"
@@ -183,10 +183,14 @@ def _search_resume_sections_with_cursor(cursor, query_text: str, top_k: int = 3,
 
     cursor.execute(base_sql, tuple(params))
     rows: List[RowType] = cursor.fetchall()
-    return rows
+    
+    # Filter by similarity threshold
+    filtered_rows = [row for row in rows if float(row[4]) >= similarity_threshold]
+    
+    return filtered_rows
 
 
-def search_resume_sections(query_text: str, top_k: int = 3, document_id: Optional[str] = None,) -> List[RowType]:
+def search_resume_sections(query_text: str, top_k: int = 3, similarity_threshold: float = 0.45, document_id: Optional[str] = None,) -> List[RowType]:
     
     conn = get_connection()
     cursor = conn.cursor()
@@ -196,6 +200,7 @@ def search_resume_sections(query_text: str, top_k: int = 3, document_id: Optiona
             cursor=cursor,
             query_text=query_text,
             top_k=top_k,
+            similarity_threshold=similarity_threshold,
             document_id=document_id,
         )
         return rows
