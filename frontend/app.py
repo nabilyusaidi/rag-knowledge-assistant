@@ -21,6 +21,6 @@ Use the sidebar to:
 - 📄 **Upload & ingest** resumes into the database  
 - ❓ **Ask questions** over all ingested resumes or a specific one  
 
-This is a thin Streamlit UI on top of the backend RAG system (PostgreSQL + pgvector, BGE embeddings, HF Router LLM).
+This is a thin Streamlit UI on top of the backend RAG system (PostgreSQL + pgvector, BGE embeddings, Gemini 3 Flash Preview).
 """
 )
