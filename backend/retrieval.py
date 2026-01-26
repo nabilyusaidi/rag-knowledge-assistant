@@ -2,7 +2,9 @@ from sentence_transformers import SentenceTransformer
 from backend.ingestion import get_connection
 import numpy, math
 
-from typing import Tuple, List, Any, Optional
+from typing import Tuple, List, Any, Optional, Dict
+import json
+from backend.llm import generate_answer
 
 embedding_model = SentenceTransformer("BAAI/bge-base-en-v1.5")
 
@@ -63,6 +65,42 @@ def embed_resume_sections(cursor):
 def embed_query(text):
     vec = generate_embedding(text)
     return vec
+
+def extract_jd_requirements(jd_text: str) -> Dict[str, List[str]]:
+    
+    system_prompt = (
+        "You are an expert technical recruiter. Extract skills and requirements from the Job Description."
+        "Return ONLY a JSON object with keys: 'must_have' (list of strings) and 'nice_to_have' (list of strings)."
+        "No markdown formatting, just raw JSON."
+    )
+    user_prompt = f"Job Description:\n{jd_text}"
+    
+    try:
+        response = generate_answer(system_prompt, user_prompt)
+        response = response.replace("```json", "").replace("```", "").strip()
+        data = json.loads(response)
+        return data
+    except Exception as e:
+        print(f"Error extracting JD requirements: {e}")
+        return {"must_have": [], "nice_to_have": []}
+
+def extract_resume_entities(resume_text: str) -> Dict[str, Any]:
+    system_prompt = (
+        "You are an expert technical recruiter. Extract technical skills and total years of experience from the Resume."
+        "Return ONLY a JSON object with keys: 'skills' (list of strings) and 'years_experience' (integer)."
+        "No markdown formatting, just raw JSON."
+    )
+    user_prompt = f"Resume Text:\n{resume_text}"
+    
+    try:
+        response = generate_answer(system_prompt, user_prompt)
+        # Clean potential markdown
+        response = response.replace("```json", "").replace("```", "").strip()
+        data = json.loads(response)
+        return data
+    except Exception as e:
+        print(f"Error extracting resume entities: {e}")
+        return {"skills": [], "years_experience": 0}
 
 def _search_resume_sections_with_cursor(cursor, query_text: str, top_k: int = 3, document_id: Optional[str] = None,) -> List[RowType]:
     
