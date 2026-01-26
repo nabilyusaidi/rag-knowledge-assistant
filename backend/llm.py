@@ -50,7 +50,8 @@ def generate_answer(system_prompt: str, user_prompt: str, max_new_tokens: int = 
             max_tokens=max_new_tokens,
             top_p=0.9,
         )
-        return response.choices[0].message.content.strip()
+        msg = response.choices[0].message.content
+        return msg.strip() if msg else ""
     except Exception as e:
         print(f"Primary model failed ({e}), switching to fallback...")
         client = _get_fallback_llm()
@@ -61,5 +62,6 @@ def generate_answer(system_prompt: str, user_prompt: str, max_new_tokens: int = 
             max_tokens=max_new_tokens,
             top_p=0.9,
         )
-        return response.choices[0].message.content.strip()
+        msg = response.choices[0].message.content
+        return msg.strip() if msg else ""
 
