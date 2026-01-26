@@ -43,7 +43,7 @@ def main():
     if df_status.empty:
         st.info("No applications yet.")
     else:
-        st.dataframe(df_status, use_container_width=True)
+        st.dataframe(df_status, width='stretch')
         st.bar_chart(
             data=df_status.set_index("status")["count"],
             horizontal=True
@@ -58,7 +58,7 @@ def main():
     if df_dept.empty:
         st.info("No job posts found.")
     else:
-        st.dataframe(df_dept, use_container_width=True)
+        st.dataframe(df_dept, width='stretch')
         st.caption("Applications by Department")
         st.bar_chart(
             data=df_dept.set_index("department")["total_applications"],
@@ -75,7 +75,7 @@ def main():
         st.info("No job posts yet.")
         return
 
-    st.dataframe(df_jobs, use_container_width=True)
+    st.dataframe(df_jobs, width='stretch')
 
     # Detailed view for selected job_post
     job_ids = df_jobs["job_post_id"].tolist()
@@ -102,7 +102,7 @@ def main():
             if "ats_score" in df_apps.columns:
                 df_apps = df_apps.sort_values(by="ats_score", ascending=False)
 
-            st.dataframe(df_apps[final_cols], use_container_width=True)
+            st.dataframe(df_apps[final_cols], width='stretch')
 
             # small score distribution chart
             # Score Distribution Histogram
