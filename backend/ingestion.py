@@ -124,6 +124,60 @@ def insert_sections(cursor, document_id, sections, doc_type="resume"):
             (document_id, section["label"], section["index"], section["content"], Json(section_metadata))
         )
     
+def auto_apply_and_score(cursor, document_id):
+    print(f"Auto-applying document {document_id} to all jobs...")
+    
+    # Get all Job IDs
+    cursor.execute("SELECT id FROM job_posts")
+    job_ids = [row[0] for row in cursor.fetchall()]
+    
+    if not job_ids:
+        print("No job posts found. Skipping application.")
+        return
+
+    # Link Resume to Job Descriptions (Create Applications)
+    created_apps = []
+    
+    # Import locally to avoid top-level circular dependency
+    from backend.ats import evaluate_application
+    
+    for job_id in job_ids:
+        cursor.execute(
+            "SELECT id FROM applications WHERE job_post_id = %s AND resume_document_id = %s",
+            (job_id, document_id)
+        )
+        existing = cursor.fetchone()
+        
+        if existing:
+            app_id = existing[0]
+        else:
+            # Create new
+            try:
+                cursor.execute(
+                    """
+                    INSERT INTO applications (job_post_id, resume_document_id, status, created_at, updated_at)
+                    VALUES (%s, %s, 'new', NOW(), NOW())
+                    RETURNING id
+                    """,
+                    (job_id, document_id)
+                )
+                app_id = cursor.fetchone()[0]
+            except Exception as e:
+                print(f"Error creating application for job {job_id}: {e}")
+                continue
+                
+        created_apps.append(app_id)
+    cursor.connection.commit() 
+    print(f"Created/Found {len(created_apps)} applications. Starting scoring...")
+    
+    # Calculate ATS Score for each application
+    for app_id in created_apps:
+        try:
+            print(f"Scoring App ID: {app_id}")
+            evaluate_application(str(app_id))
+        except Exception as e:
+            print(f"Error auto-scoring app {app_id}: {e}")
+
 def batch_ingestion(folder_path):
     folder_path = os.path.abspath(folder_path)
     
@@ -170,7 +224,22 @@ def main(pdf_path, original_filename=None):
 
         # Commit changes to DB
         conn.commit()
-        print("Ingestion completed.")
+        print("Ingestion completed. Starting embedding generation...")
+        
+        # Embed sections
+        # to avoid circular dependency at module level
+        from backend.retrieval import embed_resume_sections
+        embed_resume_sections(cursor)
+        conn.commit()
+        
+        # Auto-apply and calculate ATS Score
+        try:
+            auto_apply_and_score(cursor, document_id)
+        except Exception as e:
+            print(f"Error during auto-apply/score: {e}")
+            
+
+            
         return document_id
         
     except Exception as e:
