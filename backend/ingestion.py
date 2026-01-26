@@ -143,13 +143,13 @@ def batch_ingestion(folder_path):
             print("Error ingesting", pdf_path, ":", e)
 
 
-def main(pdf_path):
+def main(pdf_path, original_filename=None):
     conn = get_connection()
     cursor = conn.cursor()
     
     try:
         # Insert Document Row
-        title = Path(pdf_path).name
+        title = original_filename if original_filename else Path(pdf_path).name
         document_id = insert_document(cursor, title, pdf_path, doc_type="resume")
         print ("Inserted document ID:", document_id)
         
@@ -171,6 +171,7 @@ def main(pdf_path):
         # Commit changes to DB
         conn.commit()
         print("Ingestion completed.")
+        return document_id
         
     except Exception as e:
         conn.rollback()

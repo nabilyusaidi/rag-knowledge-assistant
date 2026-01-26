@@ -41,7 +41,7 @@ if uploaded_file is not None:
                 #      - read & clean text
                 #      - extract sections
                 #      - insert into `resume_sections`
-                ingest_pdf(tmp_path)
+                ingest_pdf(tmp_path, original_filename=uploaded_file.name)
 
             # 3. Compute section & token counts for display
             raw_text = read_pdf_text(tmp_path)
@@ -62,10 +62,9 @@ if uploaded_file is not None:
                 st.metric("Approx. tokens", token_count)
 
             # 5. Leave room for future detail
-            with st.expander("View more details (for later extensions)"):
+            with st.expander("View more details"):
                 st.write(
-                    "You can later show section labels, snippets, and metadata here.\n\n"
-                    "Example section labels (if available):"
+                    "Section labels available:"
                 )
                 preview_labels = [s.get("label", "unknown") for s in sections[:5]]
                 st.write(preview_labels)
