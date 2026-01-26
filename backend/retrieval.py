@@ -84,23 +84,76 @@ def extract_jd_requirements(jd_text: str) -> Dict[str, List[str]]:
         print(f"Error extracting JD requirements: {e}")
         return {"must_have": [], "nice_to_have": []}
 
-def extract_resume_entities(resume_text: str) -> Dict[str, Any]:
-    system_prompt = (
-        "You are an expert technical recruiter. Extract technical skills and total years of experience from the Resume."
-        "Return ONLY a JSON object with keys: 'skills' (list of strings) and 'years_experience' (integer)."
-        "No markdown formatting, just raw JSON."
-    )
-    user_prompt = f"Resume Text:\n{resume_text}"
+import re
+
+SKILLS_LIST = [
+    # Programming Languages
+    "python", "r", "sql", "java", "c++", "scala", "julia", "matlab", "sas",
     
-    try:
-        response = generate_answer(system_prompt, user_prompt)
-        # Clean potential markdown
-        response = response.replace("```json", "").replace("```", "").strip()
-        data = json.loads(response)
-        return data
-    except Exception as e:
-        print(f"Error extracting resume entities: {e}")
-        return {"skills": [], "years_experience": 0}
+    # Data Manipulation & Analysis
+    "pandas", "numpy", "scipy", "dask", "polars", "vaex", "modin", 
+    
+    # Visualization
+    "matplotlib", "seaborn", "plotly", "bokeh", "altair", "ggplot", "tableau", "power bi", "looker", "quicksight",
+    
+    # Machine Learning & Statistics
+    "scikit-learn", "xgboost", "lightgbm", "catboost", "statsmodels", "h2o", "auto-sklearn", "tpot",
+    "regression", "classification", "clustering", "time series", "forecasting", "a/b testing", "hypothesis testing",
+    
+    # Deep Learning (Frameworks & Architectures)
+    "pytorch", "tensorflow", "keras", "mxnet", "jax", "fastai", "opencv",
+    "cnn", "rnn", "lstm", "gan", "transformer", "bert", "gpt", "diffusion models",
+    
+    # NLP & LLM
+    "nltk", "spacy", "gensim", "textblob", "hugging face", "transformers", "langchain", "llamaindex", 
+    "haystack", "openai api", "anthropic", "gemini", "llama", "mistral", "rag", "retrieval augmented generation",
+    "prompt engineering", "fine-tuning", "lora", "qlora",
+    
+    # Vector Databases & Search
+    "vector database", "pgvector", "pinecone", "faiss", "weaviate", "chromadb", "milvus", "qdrant", "elasticsearch", "opensearch",
+    
+    # Big Data & Distributed Computing
+    "spark", "pyspark", "hadoop", "hive", "kafka", "flink", "databricks", "snowflake", "bigquery", "redshift",
+    
+    # MLOps & Model Serving
+    "mlflow", "kubeflow", "airflow", "prefect", "dbt", "wandb", "weights & biases", "bentoml", "ray", 
+    "sagemaker", "vertex ai", "azure ml", "docker", "kubernetes", "git", "ci/cd",
+    
+    # Databases (SQL & NoSQL)
+    "postgresql", "mysql", "mongodb", "cassandra", "redis", "dynamodb", "oracle", "sql server",
+    
+    # Cloud Platforms
+    "aws", "gcp", "azure", "ibm cloud", "oracle cloud"
+]
+
+def extract_resume_entities(resume_text: str) -> Dict[str, Any]:
+    # 1. Extract Skills (Keyword Matching)
+    text_lower = resume_text.lower()
+    found_skills = []
+    
+    for skill in SKILLS_LIST:
+        pattern = r'\b' + re.escape(skill) + r'\b'
+        if re.search(pattern, text_lower):
+            found_skills.append(skill)
+            
+    # 2. Extract Years of Experience
+    years_pattern = r'(\d+)\+?\s*(?:years?|yrs?)'
+    matches = re.findall(years_pattern, text_lower)
+    
+    years_experience = 0
+    if matches:
+        try:
+        
+            years = [int(m) for m in matches if int(m) < 60]
+            if years:
+                years_experience = max(years)
+        except Exception:
+            pass
+
+    return {
+        "skills": found_skills, 
+        "years_experience": years_experience
+    }
 
 def _search_resume_sections_with_cursor(cursor, query_text: str, top_k: int = 3, document_id: Optional[str] = None,) -> List[RowType]:
     
