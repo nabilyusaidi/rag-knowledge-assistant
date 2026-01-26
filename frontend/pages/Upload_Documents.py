@@ -6,7 +6,6 @@ import streamlit as st
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
 
-
 from backend.ingestion import (
     main as ingest_pdf,
     read_pdf_text,

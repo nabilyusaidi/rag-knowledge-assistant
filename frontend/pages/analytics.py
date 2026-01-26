@@ -187,13 +187,13 @@ def main():
                         
                         # Critical Gaps
                         missing_must = score_details.get("missing_must", [])
-                        st.markdown("**Critical Gaps** (Immediate Blockers)")
+                        st.markdown("**Critical Gaps** (Immediate Mismatch)")
                         if missing_must:
                             for gap in missing_must:
                                 st.markdown(f"- {gap}")
                             st.caption("These skills are required for the role.")
                         else:
-                            st.markdown("*(No critical gaps identified)*")
+                            st.markdown("*No critical gaps identified*")
                         
                         st.write("") # spacer
 
@@ -205,7 +205,7 @@ def main():
                                 st.markdown(f"- {gap}")
                             st.caption("Can likely be addressed with onboarding/training.")
                         else:
-                             st.markdown("*(No moderate gaps identified)*")
+                             st.markdown("*No moderate gaps identified*")
 
                     with col_strengths:
                         st.markdown("#### ✅ Strengths & Assets")
